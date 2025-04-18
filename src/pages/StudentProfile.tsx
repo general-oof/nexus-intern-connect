@@ -129,12 +129,34 @@ const StudentProfile = () => {
 
   const onSubmit = async (data: FormData) => {
     try {
-      // In a real app, you would save this to the database
-      console.log("Student profile data:", data);
-      
-      // Set user type to student and mark profile as completed
-      setUserType("student");
-      setProfileCompleted(true);
+      // Set user type if not already set
+      if (!user?.userType) {
+        await setUserType("student");
+      }
+
+      // Insert student profile data
+      const { error: profileError } = await supabase
+        .from('student_profiles')
+        .upsert({
+          id: user?.id,
+          full_name: data.fullName,
+          birth_year: data.birthYear,
+          campus: data.campus,
+          bits_id: data.bitsId,
+          branch: data.branch,
+          dual_degree_branch: data.dualDegreeBranch || null,
+          minor_degree: data.minorDegree || null,
+          domains_of_interest: data.domainsOfInterest,
+          email: data.email,
+          whatsapp_number: data.whatsappNumber || null,
+          linkedin_profile: data.linkedinProfile || null,
+          website: data.website || null
+        });
+
+      if (profileError) throw profileError;
+
+      // Mark profile as completed
+      await setProfileCompleted(true);
       
       toast({
         title: "Profile created",

@@ -116,12 +116,34 @@ const StartupProfile = () => {
 
   const onSubmit = async (data: FormData) => {
     try {
-      // In a real app, you would save this to the database
-      console.log("Startup profile data:", data);
-      
-      // Set user type to startup and mark profile as completed
-      setUserType("startup");
-      setProfileCompleted(true);
+      // Set user type if not already set
+      if (!user?.userType) {
+        await setUserType("startup");
+      }
+
+      // Insert startup profile data
+      const { error: profileError } = await supabase
+        .from('startup_profiles')
+        .upsert({
+          id: user?.id,
+          official_name: data.officialName,
+          website_url: data.websiteUrl,
+          year_of_incorporation: data.yearOfIncorporation,
+          location: data.location,
+          logo_url: data.logoUrl || null,
+          summary: data.summary,
+          domain_of_operation: data.domainOfOperation,
+          founder_name: data.founderName,
+          founder_age: data.founderAge,
+          founder_email: data.founderEmail,
+          founder_whatsapp: data.founderWhatsapp || null,
+          founder_linkedin: data.founderLinkedin || null
+        });
+
+      if (profileError) throw profileError;
+
+      // Mark profile as completed
+      await setProfileCompleted(true);
       
       toast({
         title: "Profile created",

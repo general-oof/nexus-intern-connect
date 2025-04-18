@@ -31,102 +31,133 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Load user from localStorage on initial render
-  useEffect(() => {
-    const storedUser = localStorage.getItem("nexusUser");
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error("Error parsing user from localStorage:", error);
-        localStorage.removeItem("nexusUser");
-      }
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data: userProfile, error: userProfileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (userProfileError) throw userProfileError;
+
+      return userProfile;
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      return null;
     }
-  }, []);
+  };
 
   useEffect(() => {
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log("Auth state changed:", event, session);
         if (session) {
-          // Get stored user data if available to preserve userType and profileCompleted
-          let storedUserData = null;
-          try {
-            const storedUser = localStorage.getItem("nexusUser");
-            if (storedUser) {
-              storedUserData = JSON.parse(storedUser);
-            }
-          } catch (e) {
-            console.error("Error parsing stored user data", e);
-          }
-
+          const userProfile = await fetchUserProfile(session.user.id);
+          
           const userData: User = {
             id: session.user.id,
             email: session.user.email || "",
             name: session.user.user_metadata.full_name || session.user.user_metadata.name || "",
-            // Preserve user type and profile completion status if available
-            userType: storedUserData?.userType || null,
-            profileCompleted: storedUserData?.profileCompleted || false
+            userType: userProfile?.user_type || null,
+            profileCompleted: userProfile?.profile_completed || false
           };
-          setUser(userData);
-          localStorage.setItem("nexusUser", JSON.stringify(userData));
           
-          // Don't redirect if already on profile completion pages
+          setUser(userData);
+          
+          // Redirect logic for profile completion
           const currentPath = window.location.pathname;
-          if (!userData.userType && !['/student-profile', '/startup-profile', '/login'].includes(currentPath)) {
-            navigate('/student-profile');
+          if (!userProfile) {
+            // New user, needs to choose profile type
+            if (!['/student-profile', '/startup-profile', '/login'].includes(currentPath)) {
+              navigate('/student-profile');
+            }
+          } else if (!userProfile.profile_completed) {
+            // Profile type selected but not completed
+            if (!['/student-profile', '/startup-profile', '/login'].includes(currentPath)) {
+              navigate(userProfile.user_type === 'student' ? '/student-profile' : '/startup-profile');
+            }
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
-          localStorage.removeItem("nexusUser");
-          navigate('/');
+          navigate('/login');
         }
       }
     );
 
-    // Check initial session
-    const initializeAuth = async () => {
-      try {
-        setLoading(true);
-        const { data: { session } } = await supabase.auth.getSession();
+    // Initial session check
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session) {
+        const userProfile = await fetchUserProfile(session.user.id);
         
-        if (session) {
-          // Get stored user data if available
-          let storedUserData = null;
-          try {
-            const storedUser = localStorage.getItem("nexusUser");
-            if (storedUser) {
-              storedUserData = JSON.parse(storedUser);
-            }
-          } catch (e) {
-            console.error("Error parsing stored user data", e);
-          }
-
-          const userData: User = {
-            id: session.user.id,
-            email: session.user.email || "",
-            name: session.user.user_metadata.full_name || session.user.user_metadata.name || "",
-            // Preserve user type and profile completion status if available
-            userType: storedUserData?.userType || null,
-            profileCompleted: storedUserData?.profileCompleted || false
-          };
-          setUser(userData);
-          localStorage.setItem("nexusUser", JSON.stringify(userData));
-        }
-      } catch (error) {
-        console.error("Error checking auth session:", error);
-      } finally {
-        setLoading(false);
+        const userData: User = {
+          id: session.user.id,
+          email: session.user.email || "",
+          name: session.user.user_metadata.full_name || session.user.user_metadata.name || "",
+          userType: userProfile?.user_type || null,
+          profileCompleted: userProfile?.profile_completed || false
+        };
+        
+        setUser(userData);
       }
-    };
-
-    initializeAuth();
+      setLoading(false);
+    });
 
     return () => {
       subscription.unsubscribe();
     };
   }, [navigate]);
+
+  const setUserType = async (type: UserType) => {
+    if (user) {
+      try {
+        const { error } = await supabase
+          .from('user_profiles')
+          .upsert({
+            id: user.id,
+            user_type: type,
+            profile_completed: false
+          });
+
+        if (error) throw error;
+
+        setUser({ ...user, userType: type, profileCompleted: false });
+      } catch (error) {
+        console.error("Error setting user type:", error);
+        toast({
+          title: "Error",
+          description: "Failed to set user type. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const setProfileCompleted = async (completed: boolean) => {
+    if (user) {
+      try {
+        const { error } = await supabase
+          .from('user_profiles')
+          .update({ profile_completed: completed })
+          .eq('id', user.id);
+
+        if (error) throw error;
+
+        setUser({ ...user, profileCompleted: completed });
+
+        if (completed) {
+          // Redirect based on user type
+          navigate(user.userType === 'student' ? '/student' : '/startup');
+        }
+      } catch (error) {
+        console.error("Error updating profile completion:", error);
+        toast({
+          title: "Error",
+          description: "Failed to update profile status. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
 
   const signInWithGoogle = async () => {
     try {
@@ -162,13 +193,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) throw error;
       
       setUser(null);
-      localStorage.removeItem("nexusUser");
       
       toast({
         title: "Signed out",
         description: "You have been signed out of your account.",
       });
-      navigate("/");
+      navigate("/login");
     } catch (error) {
       console.error("Error signing out:", error);
       toast({
@@ -176,22 +206,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         description: "Something went wrong while signing out.",
         variant: "destructive",
       });
-    }
-  };
-
-  const setUserType = (type: UserType) => {
-    if (user) {
-      const updatedUser = { ...user, userType: type };
-      setUser(updatedUser);
-      localStorage.setItem("nexusUser", JSON.stringify(updatedUser));
-    }
-  };
-
-  const setProfileCompleted = (completed: boolean) => {
-    if (user) {
-      const updatedUser = { ...user, profileCompleted: completed };
-      setUser(updatedUser);
-      localStorage.setItem("nexusUser", JSON.stringify(updatedUser));
     }
   };
 

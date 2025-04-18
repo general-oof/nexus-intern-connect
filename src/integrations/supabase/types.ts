@@ -9,7 +9,145 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      startup_profiles: {
+        Row: {
+          domain_of_operation: string
+          founder_age: number
+          founder_email: string
+          founder_linkedin: string | null
+          founder_name: string
+          founder_whatsapp: string | null
+          id: string
+          location: string
+          logo_url: string | null
+          official_name: string
+          summary: string
+          website_url: string
+          year_of_incorporation: number
+        }
+        Insert: {
+          domain_of_operation: string
+          founder_age: number
+          founder_email: string
+          founder_linkedin?: string | null
+          founder_name: string
+          founder_whatsapp?: string | null
+          id: string
+          location: string
+          logo_url?: string | null
+          official_name: string
+          summary: string
+          website_url: string
+          year_of_incorporation: number
+        }
+        Update: {
+          domain_of_operation?: string
+          founder_age?: number
+          founder_email?: string
+          founder_linkedin?: string | null
+          founder_name?: string
+          founder_whatsapp?: string | null
+          id?: string
+          location?: string
+          logo_url?: string | null
+          official_name?: string
+          summary?: string
+          website_url?: string
+          year_of_incorporation?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "startup_profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_profiles: {
+        Row: {
+          birth_year: number
+          bits_id: string
+          branch: string
+          campus: string
+          domains_of_interest: string[]
+          dual_degree_branch: string | null
+          email: string
+          full_name: string
+          id: string
+          linkedin_profile: string | null
+          minor_degree: string | null
+          resume_url: string | null
+          website: string | null
+          whatsapp_number: string | null
+        }
+        Insert: {
+          birth_year: number
+          bits_id: string
+          branch: string
+          campus: string
+          domains_of_interest: string[]
+          dual_degree_branch?: string | null
+          email: string
+          full_name: string
+          id: string
+          linkedin_profile?: string | null
+          minor_degree?: string | null
+          resume_url?: string | null
+          website?: string | null
+          whatsapp_number?: string | null
+        }
+        Update: {
+          birth_year?: number
+          bits_id?: string
+          branch?: string
+          campus?: string
+          domains_of_interest?: string[]
+          dual_degree_branch?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          linkedin_profile?: string | null
+          minor_degree?: string | null
+          resume_url?: string | null
+          website?: string | null
+          whatsapp_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          profile_completed: boolean | null
+          updated_at: string | null
+          user_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          profile_completed?: boolean | null
+          updated_at?: string | null
+          user_type: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          profile_completed?: boolean | null
+          updated_at?: string | null
+          user_type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
