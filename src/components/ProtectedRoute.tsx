@@ -1,6 +1,6 @@
 
 import { ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ProtectedRouteProps {
@@ -10,6 +10,7 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children, userType }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -29,7 +30,7 @@ const ProtectedRoute = ({ children, userType }: ProtectedRouteProps) => {
   }
 
   // If user hasn't completed profile setup
-  if (user && !user.profileCompleted && !["/student-profile", "/startup-profile"].includes(window.location.pathname)) {
+  if (user && !user.profileCompleted && !["/student-profile", "/startup-profile"].includes(location.pathname)) {
     if (user.userType === "student") {
       return <Navigate to="/student-profile" replace />;
     } else if (user.userType === "startup") {

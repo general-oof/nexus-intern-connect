@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
@@ -29,32 +29,30 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/student-profile" element={<ProtectedRoute><StudentProfile /></ProtectedRoute>} />
-            <Route path="/startup-profile" element={<ProtectedRoute><StartupProfile /></ProtectedRoute>} />
-            
-            {/* Student Routes */}
-            <Route path="/student" element={<ProtectedRoute userType="student"><StudentHome /></ProtectedRoute>} />
-            <Route path="/internships" element={<ProtectedRoute userType="student"><InternshipsList /></ProtectedRoute>} />
-            <Route path="/applied" element={<ProtectedRoute userType="student"><AppliedPositions /></ProtectedRoute>} />
-            
-            {/* Startup Routes */}
-            <Route path="/startup" element={<ProtectedRoute userType="startup"><StartupHome /></ProtectedRoute>} />
-            <Route path="/create-internship" element={<ProtectedRoute userType="startup"><CreateInternship /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute userType="startup"><StartupDashboard /></ProtectedRoute>} />
-            
-            {/* Common Routes */}
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-            
-            {/* Catch-all */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/student-profile" element={<ProtectedRoute><StudentProfile /></ProtectedRoute>} />
+          <Route path="/startup-profile" element={<ProtectedRoute><StartupProfile /></ProtectedRoute>} />
+          
+          {/* Student Routes */}
+          <Route path="/student" element={<ProtectedRoute userType="student"><StudentHome /></ProtectedRoute>} />
+          <Route path="/internships" element={<ProtectedRoute userType="student"><InternshipsList /></ProtectedRoute>} />
+          <Route path="/applied" element={<ProtectedRoute userType="student"><AppliedPositions /></ProtectedRoute>} />
+          
+          {/* Startup Routes */}
+          <Route path="/startup" element={<ProtectedRoute userType="startup"><StartupHome /></ProtectedRoute>} />
+          <Route path="/create-internship" element={<ProtectedRoute userType="startup"><CreateInternship /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute userType="startup"><StartupDashboard /></ProtectedRoute>} />
+          
+          {/* Common Routes */}
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          
+          {/* Catch-all */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
