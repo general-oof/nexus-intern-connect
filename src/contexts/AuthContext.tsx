@@ -2,6 +2,7 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 type UserType = "student" | "startup" | null;
 
@@ -29,40 +30,65 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
-    // Check if user is logged in from localStorage
-    const storedUser = localStorage.getItem("nexusUser");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session) {
+          const userData: User = {
+            id: session.user.id,
+            email: session.user.email || "",
+            name: session.user.user_metadata.full_name || "",
+            userType: null,
+            profileCompleted: false
+          };
+          setUser(userData);
+          localStorage.setItem("nexusUser", JSON.stringify(userData));
+        } else {
+          setUser(null);
+          localStorage.removeItem("nexusUser");
+        }
+      }
+    );
+
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        const userData: User = {
+          id: session.user.id,
+          email: session.user.email || "",
+          name: session.user.user_metadata.full_name || "",
+          userType: null,
+          profileCompleted: false
+        };
+        setUser(userData);
+        localStorage.setItem("nexusUser", JSON.stringify(userData));
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signInWithGoogle = async () => {
     try {
-      // This is a mock implementation; replace with Supabase auth
       setLoading(true);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/student-profile'
+        }
+      });
       
-      // Simulate a successful login
-      const mockUser = {
-        id: "mock-id-" + Math.random().toString(36).substr(2, 9),
-        email: "user@example.com",
-        name: "John Doe",
-        userType: null as UserType,
-        profileCompleted: false
-      };
-      
-      setUser(mockUser);
-      localStorage.setItem("nexusUser", JSON.stringify(mockUser));
+      if (error) throw error;
       
       toast({
         title: "Signed in successfully",
         description: "Welcome to Nexus!",
       });
-      
-      navigate("/student-profile");
     } catch (error) {
       console.error("Error signing in:", error);
       toast({
@@ -77,9 +103,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     try {
-      // This is a mock implementation; replace with Supabase auth
-      localStorage.removeItem("nexusUser");
-      setUser(null);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
       toast({
         title: "Signed out",
         description: "You have been signed out of your account.",
