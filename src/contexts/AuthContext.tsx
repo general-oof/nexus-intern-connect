@@ -54,11 +54,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (session) {
           const userProfile = await fetchUserProfile(session.user.id);
           
+          // Convert string to proper UserType
+          let userType: UserType = null;
+          if (userProfile?.user_type === 'student' || userProfile?.user_type === 'startup') {
+            userType = userProfile.user_type as UserType;
+          }
+          
           const userData: User = {
             id: session.user.id,
             email: session.user.email || "",
             name: session.user.user_metadata.full_name || session.user.user_metadata.name || "",
-            userType: userProfile?.user_type || null,
+            userType: userType,
             profileCompleted: userProfile?.profile_completed || false
           };
           
@@ -89,11 +95,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (session) {
         const userProfile = await fetchUserProfile(session.user.id);
         
+        // Convert string to proper UserType
+        let userType: UserType = null;
+        if (userProfile?.user_type === 'student' || userProfile?.user_type === 'startup') {
+          userType = userProfile.user_type as UserType;
+        }
+        
         const userData: User = {
           id: session.user.id,
           email: session.user.email || "",
           name: session.user.user_metadata.full_name || session.user.user_metadata.name || "",
-          userType: userProfile?.user_type || null,
+          userType: userType,
           profileCompleted: userProfile?.profile_completed || false
         };
         

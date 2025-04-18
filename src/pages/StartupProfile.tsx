@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const DOMAINS = [
   "E-commerce",
@@ -121,6 +121,8 @@ const StartupProfile = () => {
         await setUserType("startup");
       }
 
+      console.log("Creating startup profile for user:", user?.id);
+
       // Insert startup profile data
       const { error: profileError } = await supabase
         .from('startup_profiles')
@@ -140,8 +142,13 @@ const StartupProfile = () => {
           founder_linkedin: data.founderLinkedin || null
         });
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error("Error creating startup profile:", profileError);
+        throw profileError;
+      }
 
+      console.log("Profile created, marking as completed");
+      
       // Mark profile as completed
       await setProfileCompleted(true);
       

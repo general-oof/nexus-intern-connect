@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -25,10 +24,11 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const DOMAINS = [
   "Web Development",
-  "Mobile Development",
+  "Mobile Development", 
   "Data Science",
   "Machine Learning",
   "UI/UX Design",
@@ -129,6 +129,9 @@ const StudentProfile = () => {
 
   const onSubmit = async (data: FormData) => {
     try {
+      console.log("Creating student profile for user:", user?.id);
+      console.log("Selected domains:", data.domainsOfInterest);
+      
       // Set user type if not already set
       if (!user?.userType) {
         await setUserType("student");
@@ -153,8 +156,13 @@ const StudentProfile = () => {
           website: data.website || null
         });
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error("Error creating student profile:", profileError);
+        throw profileError;
+      }
 
+      console.log("Profile created, marking as completed");
+      
       // Mark profile as completed
       await setProfileCompleted(true);
       
