@@ -4,10 +4,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTheme } from "next-themes";
 
 const Login = () => {
   const { signInWithGoogle } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const { theme } = useTheme();
   
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -21,24 +23,24 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-nexus-300 mb-2">Nexus</h1>
-        <p className="text-lg text-gray-600">Connecting BITS students with startup opportunities</p>
+        <p className="text-lg text-foreground">Connecting BITS students with startup opportunities</p>
       </div>
       
       <div className="w-full max-w-md">
-        <Card className="shadow-xl border-nexus-100">
+        <Card className="shadow-xl border-nexus-100 bg-card">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Welcome to Nexus</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-2xl text-card-foreground">Welcome to Nexus</CardTitle>
+            <CardDescription className="text-muted-foreground">
               Sign in to access internship opportunities
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <Button 
-                className="w-full flex items-center justify-center space-x-2 bg-white hover:bg-gray-50 text-gray-800 border border-gray-300"
+                className="w-full flex items-center justify-center space-x-2 bg-white hover:bg-gray-50 text-gray-800 border border-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-white dark:border-gray-600"
                 onClick={handleGoogleSignIn}
                 disabled={isLoading}
               >
@@ -66,16 +68,16 @@ const Login = () => {
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300"></div>
+                  <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 text-gray-500 bg-white">
+                  <span className="px-2 text-muted-foreground bg-card">
                     First time here?
                   </span>
                 </div>
               </div>
 
-              <div className="text-center text-sm text-gray-600">
+              <div className="text-center text-sm text-muted-foreground">
                 <p>When you sign in for the first time, you'll be asked to create your profile.</p>
               </div>
             </div>

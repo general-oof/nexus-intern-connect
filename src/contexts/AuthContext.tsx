@@ -31,47 +31,102 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Load user from localStorage on initial render
+  useEffect(() => {
+    const storedUser = localStorage.getItem("nexusUser");
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error("Error parsing user from localStorage:", error);
+        localStorage.removeItem("nexusUser");
+      }
+    }
+  }, []);
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log("Auth state changed:", event, session);
         if (session) {
+          // Get stored user data if available to preserve userType and profileCompleted
+          let storedUserData = null;
+          try {
+            const storedUser = localStorage.getItem("nexusUser");
+            if (storedUser) {
+              storedUserData = JSON.parse(storedUser);
+            }
+          } catch (e) {
+            console.error("Error parsing stored user data", e);
+          }
+
           const userData: User = {
             id: session.user.id,
             email: session.user.email || "",
-            name: session.user.user_metadata.full_name || "",
-            userType: null,
-            profileCompleted: false
+            name: session.user.user_metadata.full_name || session.user.user_metadata.name || "",
+            // Preserve user type and profile completion status if available
+            userType: storedUserData?.userType || null,
+            profileCompleted: storedUserData?.profileCompleted || false
           };
           setUser(userData);
           localStorage.setItem("nexusUser", JSON.stringify(userData));
-        } else {
+          
+          // Don't redirect if already on profile completion pages
+          const currentPath = window.location.pathname;
+          if (!userData.userType && !['/student-profile', '/startup-profile', '/login'].includes(currentPath)) {
+            navigate('/student-profile');
+          }
+        } else if (event === 'SIGNED_OUT') {
           setUser(null);
           localStorage.removeItem("nexusUser");
+          navigate('/');
         }
       }
     );
 
     // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        const userData: User = {
-          id: session.user.id,
-          email: session.user.email || "",
-          name: session.user.user_metadata.full_name || "",
-          userType: null,
-          profileCompleted: false
-        };
-        setUser(userData);
-        localStorage.setItem("nexusUser", JSON.stringify(userData));
+    const initializeAuth = async () => {
+      try {
+        setLoading(true);
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          // Get stored user data if available
+          let storedUserData = null;
+          try {
+            const storedUser = localStorage.getItem("nexusUser");
+            if (storedUser) {
+              storedUserData = JSON.parse(storedUser);
+            }
+          } catch (e) {
+            console.error("Error parsing stored user data", e);
+          }
+
+          const userData: User = {
+            id: session.user.id,
+            email: session.user.email || "",
+            name: session.user.user_metadata.full_name || session.user.user_metadata.name || "",
+            // Preserve user type and profile completion status if available
+            userType: storedUserData?.userType || null,
+            profileCompleted: storedUserData?.profileCompleted || false
+          };
+          setUser(userData);
+          localStorage.setItem("nexusUser", JSON.stringify(userData));
+        }
+      } catch (error) {
+        console.error("Error checking auth session:", error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    };
+
+    initializeAuth();
 
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   const signInWithGoogle = async () => {
     try {
@@ -79,7 +134,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin + '/student-profile'
+          redirectTo: window.location.origin
         }
       });
       
@@ -105,6 +160,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      
+      setUser(null);
+      localStorage.removeItem("nexusUser");
       
       toast({
         title: "Signed out",
